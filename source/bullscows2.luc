@@ -1,0 +1,178 @@
+module bullscows (
+    input clk,
+    input rst,
+    input cIn[16],
+    input cTest[16],
+    output bullscows[6]
+  ) {
+  
+  .clk(clk) {
+    .rst(rst){
+      alu16 alu16;
+      alu16 alu16_2;
+      alu16 alu16_3;
+      alu alu;    
+      dff a[16];
+      dff b[16];
+      dff mask[16];
+    }
+  }
+  
+  sig bulls[3]; // 3 bits each. Combine them to become 6bits
+  sig cows[3];
+  sig imm_mask[16];
+  sig btemp[16];
+  sig atry[16];
+  sig btry[16];
+  
+  var i;
+  var j;
+  var loop_break;
+  
+  // mojo for shifter
+  // alu for comparator
+  // alu for boolean
+  // alu for masking
+  
+  always {
+    a.d = cIn;
+    b.d = cTest;
+    
+    alu16.alufn = 6b0;
+    alu16.a = 8b0;
+    alu16.b = 8b0;
+    alu16.a2 = 8b0;
+    alu16.b2 = 8b0;
+    
+    alu16_2.alufn = 6b0;
+    alu16_2.a = 8b0;
+    alu16_2.b = 8b0;
+    alu16_2.a2 = 8b0;
+    alu16_2.b2 = 8b0;
+    
+    alu16_3.alufn = 6b0;
+    alu16_3.a = 8b0;
+    alu16_3.b = 8b0;
+    alu16_3.a2 = 8b0;
+    alu16_3.b2 = 8b0;
+    
+    alu.alufn = 6b0;
+    alu.a = 8b0;
+    alu.b = 8b0;    
+    
+    bulls = 3b0;
+    cows = 3b0;
+    mask.d = 16b0000000000000111;
+    imm_mask = 16b0000000000000111;
+    btemp = 16b0;
+    atry = 16b0;
+    btry = 16b0;
+    
+    for (i = 0; i < 4; i++) {
+      //a & b boolean and
+      alu16.a = a.q[7:0];
+      alu16.a2 = a.q[15:8];
+      alu16.b = mask.q[7:0];
+      alu16.b2 = mask.q[15:8];
+      alu16.alufn = 6b011000; // AND
+      
+      alu16_2.a = b.q[7:0];
+      alu16_2.a2 = b.q[15:8];
+      alu16_2.b = mask.q[7:0];
+      alu16_2.b2 = mask.q[15:8];
+      alu16_2.alufn = 6b011000; // AND
+      
+      // comparator
+      alu16_3.a = alu16.out;
+      alu16_3.a2 = alu16.out2;
+      alu16_3.b = alu16_2.out;
+      alu16_3.b2 = alu16_2.out2;
+      alu16_3.alufn = 6b110011; // CMPEQ
+      
+      alu.a = alu16_3.out;
+      alu.b = alu16_3.out2;
+      alu.alufn = 6b011000; // AND      
+      
+      if (alu.o8 == 1) {
+        bulls = bulls + 1;
+        //a & b boolean or
+        alu16.a = a.q[7:0];
+        alu16.a2 = a.q[15:8];
+        alu16.b = mask.q[7:0];
+        alu16.b2 = mask.q[15:8];
+        alu16.alufn = 6b011110; // OR
+        a.d[7:0] = alu16.out;
+        a.d[15:8] = alu16.out2;
+        
+        alu16_2.a = b.q[7:0];
+        alu16_2.a2 = b.q[15:8];
+        alu16_2.b = mask.q[7:0];
+        alu16_2.b2 = mask.q[15:8];
+        alu16_2.alufn = 6b011110; // OR
+        b.d[7:0] = alu16_2.out;
+        b.d[15:8] = alu16_2.out;
+      }
+      
+      mask.d = mask.q << 3;
+    }
+    
+    for (i = 0; i < 4; i++) {
+      // a & b boolean and
+      alu16.a = a.q[7:0];
+      alu16.a2 = a.q[15:8];
+      alu16.b = imm_mask[7:0];
+      alu16.b2 = imm_mask[15:8];
+      alu16.alufn = 6b011000; // AND
+      atry[7:0] = alu16.out;
+      atry[15:8] = alu16.out2;
+      
+      // if (atry != 0xF)comparator
+      alu16_3.a = atry[7:0];
+      alu16_3.a2 = atry[15:8];
+      alu16_3.b = imm_mask[7:0];
+      alu16_3.b2 = imm_mask[15:8];
+      alu16_3.alufn = 6b110011; // CMPEQ
+      
+      alu.a = alu16_3.out;
+      alu.b = alu16_3.out2;
+      alu.alufn = 6b010001; // NOR
+      if (alu.o8 == 1) {
+        btemp = b.q;
+        mask.d = imm_mask;
+        loop_break = 0;
+        for (j = 0; j < 4; j++) {
+           // a & b boolean and
+          if (!loop_break) {
+            alu16_2.a = btemp[7:0];
+            alu16_2.a2 = btemp[15:8];
+            alu16_2.b = imm_mask[7:0];
+            alu16_2.b2 = imm_mask[15:8];
+            alu16_2.alufn = 6b011000; // AND
+            btry[7:0] = alu16_2.out;
+            btry[15:8] = alu16_2.out2;
+            
+            if (btry == atry) {
+              cows = cows + 1;
+              // b boolean or
+              alu16.a = b.q[7:0];
+              alu16.a2 = b.q[15:8];
+              alu16.b = mask.q[7:0];
+              alu16.b2 = mask.q[15:8];
+              alu16.alufn = 6b011110; // OR
+              b.d[7:0] = alu16.out;
+              b.d[15:8] = alu16.out2;
+              loop_break = 1;
+            }
+            btemp = btemp >> 3;
+            mask.d = mask.q << 3;
+          }
+        }
+      }
+      a.d = a.q >> 3;
+    }
+    
+    bullscows[2:0] = cows;
+    bullscows[5:3] = bulls;
+  }
+}
+

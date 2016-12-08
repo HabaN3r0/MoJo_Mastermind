@@ -1,0 +1,80 @@
+NET "ground[0]" LOC = P58;
+NET "ground[0]" IOSTANDARD = LVTTL;
+NET "ground[1]" LOC = P57;
+NET "ground[1]" IOSTANDARD = LVTTL;
+NET "ground[2]" LOC = P67;
+NET "ground[2]" IOSTANDARD = LVTTL;
+NET "ground[3]" LOC = P66;
+NET "ground[3]" IOSTANDARD = LVTTL;
+NET "ground[4]" LOC = P75;
+NET "ground[4]" IOSTANDARD = LVTTL;
+NET "ground[5]" LOC = P74;
+NET "ground[5]" IOSTANDARD = LVTTL;
+NET "ground[6]" LOC = P79;
+NET "ground[6]" IOSTANDARD = LVTTL;
+NET "ground[7]" LOC = P78;
+NET "ground[7]" IOSTANDARD = LVTTL;
+NET "ground[8]" LOC = P81;
+NET "ground[8]" IOSTANDARD = LVTTL;
+NET "ground[9]" LOC = P80;
+NET "ground[9]" IOSTANDARD = LVTTL;
+
+NET "color_led[0]" LOC = P124;
+NET "color_led[0]" IOSTANDARD = LVTTL;
+NET "color_led[1]" LOC = P127;
+NET "color_led[1]" IOSTANDARD = LVTTL;
+NET "color_led[2]" LOC = P123;
+NET "color_led[2]" IOSTANDARD = LVTTL;
+
+NET "color_led[3]" LOC = P131;
+NET "color_led[3]" IOSTANDARD = LVTTL;
+NET "color_led[4]" LOC = P133;
+NET "color_led[4]" IOSTANDARD = LVTTL;
+NET "color_led[5]" LOC = P134;
+NET "color_led[5]" IOSTANDARD = LVTTL;
+
+NET "color_led[6]" LOC = P140;
+NET "color_led[6]" IOSTANDARD = LVTTL;
+NET "color_led[7]" LOC = P142;
+NET "color_led[7]" IOSTANDARD = LVTTL;
+NET "color_led[8]" LOC = P139;
+NET "color_led[8]" IOSTANDARD = LVTTL;
+
+NET "color_led[9]" LOC = P143;
+NET "color_led[9]" IOSTANDARD = LVTTL;
+NET "color_led[10]" LOC = P1;
+NET "color_led[10]" IOSTANDARD = LVTTL;
+NET "color_led[11]" LOC = P2;
+NET "color_led[11]" IOSTANDARD = LVTTL;
+
+NET "color_led[12]" LOC = P8;
+NET "color_led[12]" IOSTANDARD = LVTTL;
+NET "color_led[13]" LOC = P10;
+NET "color_led[13]" IOSTANDARD = LVTTL;
+NET "color_led[14]" LOC = P7;
+NET "color_led[14]" IOSTANDARD = LVTTL;
+
+NET "bc_led[0]" LOC = P15;
+NET "bc_led[0]" IOSTANDARD = LVTTL;
+NET "bc_led[1]" LOC = P14;
+NET "bc_led[1]" IOSTANDARD = LVTTL;
+
+NET "bc_led[2]" LOC = P22;
+NET "bc_led[2]" IOSTANDARD = LVTTL;
+NET "bc_led[3]" LOC = P21;
+NET "bc_led[3]" IOSTANDARD = LVTTL;
+
+NET "bc_led[4]" LOC = P27;
+NET "bc_led[4]" IOSTANDARD = LVTTL;
+NET "bc_led[5]" LOC = P26;
+NET "bc_led[5]" IOSTANDARD = LVTTL;
+
+NET "bc_led[6]" LOC = P32;
+NET "bc_led[6]" IOSTANDARD = LVTTL;
+NET "bc_led[7]" LOC = P33;
+NET "bc_led[7]" IOSTANDARD = LVTTL;
+
+NET "bc_led[8]" LOC = P51;
+NET "bc_led[8]" IOSTANDARD = LVTTL;
+NET "bc_led[9]" LOC = P50;
+NET "bc_led[9]" IOSTANDARD = LVTTL;

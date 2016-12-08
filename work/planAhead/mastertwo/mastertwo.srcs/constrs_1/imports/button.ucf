@@ -1,0 +1,13 @@
+NET "color_button<0>" LOC = P120| IOSTANDARD = LVTTL | PULLUP;
+NET "color_button<1>" LOC = P119 | IOSTANDARD = LVTTL | PULLUP;
+NET "color_button<2>" LOC = P116 | IOSTANDARD = LVTTL | PULLUP;
+NET "color_button<3>" LOC = P117 | IOSTANDARD = LVTTL | PULLUP;
+NET "color_button<4>" LOC = P118 | IOSTANDARD = LVTTL | PULLUP;
+NET "color_button<5>" LOC = P111 | IOSTANDARD = LVTTL | PULLUP;
+NET "color_button<6>" LOC = P87 | IOSTANDARD = LVTTL | PULLUP;
+NET "left_button" LOC = P121 | IOSTANDARD = LVTTL | PULLUP;
+NET "right_button" LOC = P99 | IOSTANDARD = LVTTL | PULLUP;
+NET "submit_button" LOC = P97 | IOSTANDARD = LVTTL | PULLUP;
+NET "reset_button" LOC = P92 | IOSTANDARD = LVTTL | PULLUP;
+NET "up_button" LOC = P104 | IOSTANDARD = LVTTL | PULLUP;
+NET "down_button" LOC = P101 | IOSTANDARD = LVTTL | PULLUP;

@@ -1,0 +1,340 @@
+module mojo_top (
+    input clk,              // 50MHz clock
+    input rst_n,            // reset button (active low)
+    input color_button[7],
+    input reset_button,
+    input submit_button,
+    input left_button,
+    input right_button,
+    input up_button,
+    input down_button,
+    output ground[10],
+    output color_led[5][3],
+    output bc_led[5][2]
+) {
+  
+  sig rst;                  // reset signal
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    reset_conditioner reset_cond;
+
+    .rst(rst){
+      counter flagbutton_color[7];
+      counter flagbutton_shift_left;
+      counter flagbutton_shift_right;
+      counter flagbutton_submit;
+      counter flagbutton_up;
+      counter flagbutton_down;
+      counter flagbutton_reset;
+      bullscows bullscows;
+      dff row[4]; // determines which row the buttons map to
+      dff col[3]; // determines which col the buttons map to
+      dff r0[10][5][3]; // saved state of rgb leds
+      dff bc[10][5][2]; // saved state of bullcows leds 
+      dff a[5][3]; // used to obtain rgb button inputs to be saved to r0
+      dff counter[9]; // cycling counter for ground
+      dff col_counter[8]; // cycling counter for columns
+      dff blink_counter[25]; // blinking counter
+      dff ground_i[4]; // cycle pointer for ground
+      dff col_i[4]; // cycle pointer for columns
+      dff blink_i[1]; // flag
+      dff start_flag[1]; // used to generate random 15 bit number
+      dff start_state[3]; // when 1, game is on. When 2, game has ended.
+      dff bull_num[15]; // saves the 15 bit randomed number
+      dff diff[4](#INIT(9)); // default difficulty is 9 rows
+      pn_gen pn_gen;
+    }
+  }
+  sig temp_bullscows[10];
+  sig pn_mask[15];
+  sig f_mask[5][3];
+  sig is_win;
+  sig not_empty[3];
+  var loop_break;
+  
+  var i; // for loop variable
+  var j; // for loop variable
+  
+  always {
+    //  *** INITIALIZATION ***
+
+    // reset to 0 at every iteration
+    for (i = 0; i < a.WIDTH[0]; i++) {
+      a.d[i] = 3b0;
+    }
+    
+    is_win = 1;
+    not_empty = 0;
+    
+    flagbutton_up.button = ~up_button; // make button active high
+    flagbutton_up.reset_flag = 0;
+    
+    flagbutton_down.button = ~down_button; // make button active high
+    flagbutton_down.reset_flag = 0;
+    
+    flagbutton_reset.button = ~reset_button; // make button active high
+    flagbutton_reset.reset_flag = 0;
+    
+    flagbutton_shift_left.button = ~left_button; // make button active high
+    flagbutton_shift_left.reset_flag = 0;
+    
+    flagbutton_shift_right.button = ~right_button; // make button active high
+    flagbutton_shift_right.reset_flag = 0;
+    
+    flagbutton_submit.button = ~submit_button; // make button active high
+    flagbutton_submit.reset_flag = 0;
+   
+    // set all 7 color buttons
+    flagbutton_color.button = ~color_button;
+    flagbutton_color.reset_flag = 7x{0};
+    
+    // reset button 
+    // sets all dffs to 0
+    if(flagbutton_reset.flagout){
+      row.d = 0;
+      col.d = 0;
+      
+      for (i = 0; i < r0.WIDTH[0]; i++) {
+        for (j = 0; j < r0.WIDTH[1]; j++) {
+          r0.d[i][j] = 3b0;
+        }
+      }
+
+      for (i = 0; i < bc.WIDTH[0]; i++) {
+        for (j = 0; j < bc.WIDTH[1]; j++) {
+          bc.d[i][j] = 2b0;
+        }
+      }
+      
+      start_flag.d = 0;
+      start_state.d = 0;
+      diff.d = 9;
+      flagbutton_reset.reset_flag = 1;
+    }
+
+    reset_cond.in = ~rst_n;
+    rst = reset_cond.out;
+        
+    // perform comparison
+    bullscows.cIn[2:0] = r0.q[row.q][0];
+    bullscows.cIn[5:3] = r0.q[row.q][1];
+    bullscows.cIn[8:6] = r0.q[row.q][2];
+    bullscows.cIn[11:9] = r0.q[row.q][3];
+    bullscows.cIn[14:12] = r0.q[row.q][4];
+
+    // *** RANDOMIZER CODE ***    
+    // randomly generating 15 bit answer
+    pn_gen.seed = 1337;
+    pn_gen.next = 1;
+    
+    if (start_flag.q && !start_state.q) {
+      bull_num.d = pn_gen.num[14:0]; // save randomly generated leds 
+      pn_mask = bull_num.q;
+      // mask way to get no 0s
+      
+      // for (i = 0; i < 5; i++) {
+      //  if (pn_mask[2:0] == 3b000)
+      //   bull_num.d = bull_num.q + (1 << i * 3);
+      //  if (i != 4)        
+      //    pn_mask = pn_mask >> 3;
+      // }
+      
+      start_state.d = 1;
+    }
+    
+    bullscows.cTest[14:0]  = bull_num.q;
+    
+    temp_bullscows[1:0] = bullscows.bullscows[1:0];
+    temp_bullscows[3:2] = bullscows.bullscows[3:2];
+    temp_bullscows[5:4] = bullscows.bullscows[5:4];
+    temp_bullscows[7:6] = bullscows.bullscows[7:6];
+    temp_bullscows[9:8] = bullscows.bullscows[9:8];
+    
+    // default ground    
+    ground = 10b1111111111;
+    
+    // *** HAVEN'T STARTED
+    if (!start_state.q) {
+      if (flagbutton_up.flagout && diff.q < 9){
+        diff.d = diff.q + 1;
+        flagbutton_up.reset_flag = 1;
+      }
+
+      if (flagbutton_down.flagout && diff.q > 1){
+        diff.d = diff.q - 1;
+        flagbutton_down.reset_flag = 1;
+      }
+      
+      
+      // light up first leds to determine difficulty
+      color_led[0] = 3b001;
+      for (i = 1; i < 5; i++)
+        color_led[i] = 3b000;
+      ground = 10b1111111111 << diff.q;
+      
+      // start game 
+      if (flagbutton_submit.flagout) {
+        start_flag.d = 1; // enables the settling of random 15 bit number @ top
+        flagbutton_submit.reset_flag = 1;
+      }
+    }
+    
+    // *** STARTED
+    else if (start_state.q == 1) {
+      // Add the next LED values to the first 3 values of the array
+      for (i = 0; i < 7; i++) {
+        if (flagbutton_color.flagout[i] == 1) {
+         a.d[col.q][2:0] = i + 1;
+         flagbutton_color.reset_flag[i] = 1;
+        }
+      }
+      
+      // add color to led
+      if (a.q[col.q] > 0) {
+        r0.d[row.q][col.q] = a.q[col.q];
+      }
+      
+      if (flagbutton_shift_right.flagout && col.q > 0) {
+        col.d = col.q - 1;
+        flagbutton_shift_right.reset_flag = 1;
+        // r0.d[row.q][col.q] = a.q[2:0];
+        // a.d = 3b0;
+      }
+      else if (flagbutton_shift_left.flagout && col.q < 4) {
+        col.d = col.q + 1;
+        flagbutton_shift_left.reset_flag = 1; // reset flag of flagbutton
+        // r0.d[row.q][col.q] = a.q[2:0];
+        // a.d = 3b0;
+      }
+      // Choose to shift to go to next row
+      // if win, fk off
+      else if(flagbutton_submit.flagout && row.q < 10){
+        f_mask = r0.q[row.q];
+        
+        // mask way to get no 0s
+        loop_break = 0;
+        for (i = 0; i < 5; i++) {
+            if (f_mask[i] == 3b000)
+              loop_break = 1;
+        }
+        if (!loop_break) {
+          bc.d[row.q][0] = temp_bullscows[1:0];
+          bc.d[row.q][1] = temp_bullscows[3:2];
+          bc.d[row.q][2] = temp_bullscows[5:4];
+          bc.d[row.q][3] = temp_bullscows[7:6];
+          bc.d[row.q][4] = temp_bullscows[9:8];
+          
+          // if diff, go to state 2 
+          if (row.q >= diff.q) {
+            start_state.d = 2;
+          }
+          
+          // mask way to get no 0s
+          for (i = 0; i < 5; i++) {
+            if (bc.q[row.q][i] != 2b10)
+              is_win = 0;
+          }
+          
+          // if all correct, go to state 2 
+          if (is_win) {
+            start_state.d = 2;
+          }
+          row.d = row.q + 1;
+          col.d = 0;
+        }
+        
+        
+        flagbutton_submit.reset_flag = 1; // reset flag of flagbutton
+      }
+    }
+    
+    // if start_state.q == 2, no buttons allowed except reset
+    if (start_state.q >= 1) {
+    // ground counter speed
+      counter.d = counter.q + 1;
+      if (counter.q[counter.WIDTH-1] == 1) {
+        ground_i.d = ground_i.q + 1;
+        if (ground_i.q >= 10) {
+          ground_i.d = 0; // modulo function;         
+        }
+        counter.d = 0;
+      }
+      
+      // column counter speed
+      col_counter.d = col_counter.q + 1;
+      if (col_i.q < 5 && col_counter.q[col_counter.WIDTH-3] == 1) {
+        col_i.d = col_i.q + 1;
+        if (col_i.q >= 10) {
+          col_i.d = 0; // modulo function
+        }
+      
+        col_counter.d = 0;
+      }
+      // decrease column counter speed at bullscows
+      else if (col_i.q >= 5 && col_counter.q[col_counter.WIDTH-1] == 1) {
+        col_i.d = col_i.q + 1;
+        if (col_i.q >= 10) {
+          col_i.d = 0; // modulo function
+        }
+      
+        col_counter.d = 0;
+      }
+      
+      // blinker
+      blink_counter.d = blink_counter.q + 1;
+      if (blink_counter.q[blink_counter.WIDTH-1] == 1) {
+        blink_i.d = blink_i.q + 1;
+      
+        blink_counter.d = 0;
+      }
+      
+      // set which ground to be low
+      ground[ground_i.q] = 0;
+  
+      // set bulls and cows leds
+      for (i = 0; i < 10; i++) {
+        if (i < 5) {
+          //if (i == 4 && col_i.q == 5) {
+          //  color_led[4] = 3b000;
+          //}
+          if (col_i.q == i) { 
+           color_led[i] = r0.q[ground_i.q][i];
+           if (!blink_i.q && col.q == i && row.q == ground_i.q)  // blink current position
+             color_led[i] = 0; 
+          }
+          else {
+            color_led[i] = 3b000;
+          }
+        }
+        else {
+          // set all bc_leds to 0 when cycling in the color_leds
+          //if (i == 9 && col_i.q == 0) 
+          //  bc_led[4] = 2b00;
+  
+          if (col_i.q == i) {
+            bc_led[i-5] = bc.q[ground_i.q][i-5];
+            // bc_led[i-5] = 2b10;
+          }
+          else {
+            bc_led[i-5] = 2b00;
+          }    
+        }
+      }
+      r0.d[9][0] = bull_num.q[2:0];
+      r0.d[9][1] = bull_num.q[5:3];
+      r0.d[9][2] = bull_num.q[8:6];
+      r0.d[9][3] = bull_num.q[11:9];
+      r0.d[9][4] = bull_num.q[14:12];
+    }
+    
+    if (start_state.q == 2) {
+      r0.d[9][0] = bull_num.q[2:0];
+      r0.d[9][1] = bull_num.q[5:3];
+      r0.d[9][2] = bull_num.q[8:6];
+      r0.d[9][3] = bull_num.q[11:9];
+      r0.d[9][4] = bull_num.q[14:12];
+    }
+  }
+}

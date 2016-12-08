@@ -1,0 +1,29 @@
+//8-bit compare module
+module compare (
+    input alufn31[3],
+    input z,
+    input n,
+    input v,
+    output out[8]
+  ) {
+  always {
+    case (alufn31[2:0]) {
+      b001: // eq
+//adds 7 segment display functionalityadds 7 segment display
+        out[0] = z;
+      b010: // a > b
+        out[0] = n^v;
+      b011: // a >= b
+        out[0] = z|(n^v);
+      b100: // neq
+        out[0] = ~z;
+      b110: // a < b
+        out[0] = ~(z|(n^v));
+      b111: // a <= b 
+        out[0] = ~(n^v); 
+      default:
+        out[0] = z;
+  }
+    out[7:1] = 7b0;
+  }
+}

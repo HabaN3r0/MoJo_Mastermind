@@ -1,0 +1,117 @@
+module bullscows (
+    input clk,
+    input rst,
+    input cIn[16],
+    input cTest[16],
+    output bullscows[10]
+  ) {
+  
+  .clk(clk) {
+    .rst(rst){
+      dff a[16];
+      dff b[16];
+      dff mask[16];
+      dff cow_a[5][3];
+      dff cow_b[5][3];
+      dff mask_a[5][3];
+      dff mask_b[5][3];
+    }
+  }
+  
+  sig bulls[3]; // 3 bits each. Combine them to become 6bits
+  sig cows[3];
+  sig imm_mask[16];
+  sig bull_out[16];
+  sig cows_add[5];
+  sig temp_bullscows[10];
+  sig bull_adder[10];
+  sig cow_adder[10];
+  
+  
+  var i;
+  var j;
+  sig break[5];
+  
+  // mojo for shifter
+  // alu for comparator
+  // alu for boolean
+  // alu for masking
+  
+  always {
+    a.d = cIn;
+    b.d = cTest;
+    
+    bulls = 3b0;
+    cows = 3b0;
+    imm_mask = 16b0000000000000111;
+    temp_bullscows = 10b0; // stores temporary value for addition
+    bull_adder = 10b10;
+    cow_adder = 10b1;
+    cows_add = 5b0;
+    
+    bull_out = a.q ~^ b.q;
+    mask.d = bull_out;
+    for (i = 0; i < 5; i++) {
+      if (bull_out[2:0] == 3b111) {
+        bulls = bulls + 1;
+      }
+      bull_out = bull_out >> 3;
+    }
+        
+    cow_a.d[0] = a.q[2:0];
+    cow_a.d[1] = a.q[5:3];
+    cow_a.d[2] = a.q[8:6];
+    cow_a.d[3] = a.q[11:9];
+    cow_a.d[4] = a.q[14:12];
+    mask_a.d[0] = mask.q[2:0];
+    mask_a.d[1] = mask.q[5:3];  
+    mask_a.d[2] = mask.q[8:6];  
+    mask_a.d[3] = mask.q[11:9];  
+    mask_a.d[4] = mask.q[14:12];  
+    
+    cow_b.d[0] = b.q[2:0];
+    cow_b.d[1] = b.q[5:3];
+    cow_b.d[2] = b.q[8:6];
+    cow_b.d[3] = b.q[11:9];
+    cow_b.d[4] = b.q[14:12];
+    mask_b.d[0] = mask.q[2:0];
+    mask_b.d[1] = mask.q[5:3];  
+    mask_b.d[2] = mask.q[8:6];  
+    mask_b.d[3] = mask.q[11:9];  
+    mask_b.d[4] = mask.q[14:12];  
+
+    break = 0;
+    for (i = 0; i < 5; i++) {
+      if (mask_a.q[i] != 3b111) {
+        for (j = 0; j < 5; j++) {
+          if (mask_b.q[j] != 3b111) {
+            if (cow_a.q[i] == cow_b.q[j]) {
+              if (!break[i]) {
+                mask_b.d[j] = 3b111;
+                break[i] = 1;
+              }
+              cows_add[i] = cows_add[i] | 1;
+            }
+          }
+        }
+      }
+      cows = cows + cows_add[i];
+    }
+
+    for (i = 0; i < cows; i++) {
+      temp_bullscows = temp_bullscows + cow_adder;
+      cow_adder = cow_adder << 2;      
+    } 
+    cow_adder = cow_adder << 1;
+    for (i = 0; i < bulls; i++) {
+      temp_bullscows = temp_bullscows + cow_adder;
+      cow_adder = cow_adder << 2;
+    }
+        
+
+    bullscows = temp_bullscows;
+    
+    // bullscows[2:0] = cows;
+    // bullscows[5:3] = bulls;
+  }
+}

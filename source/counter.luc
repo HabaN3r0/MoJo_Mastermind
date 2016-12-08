@@ -1,0 +1,34 @@
+module counter (
+    input clk,       // clock
+    input rst,       // reset
+    input reset_flag,
+    input button,    // button input
+    output flagout
+  ) {
+   
+  .clk(clk) {
+    edge_detector edge_detector(#RISE(1), #FALL(0)); // detect rising edges
+     
+    button_conditioner button_cond;     // button input conditioner
+     
+    .rst(rst) {
+      dff flag[1]; // flag is used to determine whether button is pressed.
+      // flag gets reset upon reset flag 1
+    }
+  }
+ 
+  always {
+    button_cond.in = button;            // raw button input
+    edge_detector.in = button_cond.out; // input to the edge_detector
+    
+    if (edge_detector.out)              // if edge detected
+      flag.d = 1;                // add one to the counter
+    
+    if (reset_flag) { // reset flag set from the outside
+      flag.d = 0; 
+    }
+    
+    // flagout used to determine whether button has been pressed
+    flagout = flag.q; // resetting has to be from the outside
+  }
+}

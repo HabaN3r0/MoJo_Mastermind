@@ -1,0 +1,31 @@
+module alu16 (
+    input clk,  // clock
+    input rst,  // reset
+    input a[8],
+    input b[8],
+    input a2[8],
+    input b2[8],
+    input alufn[6],
+    output out[8],
+    output out2[8]
+  ) {
+  
+  .clk(clk) {
+    .rst(rst){
+      alu alu;
+      alu alu2;
+    }
+  }
+  always {
+    alu.alufn = alufn;
+    alu.a = a;
+    alu.b = b;
+    
+    alu2.alufn = alufn;
+    alu2.a = a2;
+    alu2.b = b2;
+    
+    out = alu.o8;
+    out2 = alu2.o8;
+  }
+}
